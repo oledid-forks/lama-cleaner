@@ -1,3 +1,5 @@
+import webbrowser
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -9,7 +11,7 @@ from typer_config import use_json_config
 
 from iopaint.const import *
 from iopaint.runtime import setup_model_dir, dump_environment_info, check_device
-from iopaint.schema import InteractiveSegModel, Device, RealESRGANModel
+from iopaint.schema import InteractiveSegModel, Device, RealESRGANModel, RemoveBGModel
 
 typer_app = typer.Typer(pretty_exceptions_show_locals=False, add_completion=False)
 
@@ -97,6 +99,7 @@ def run(
 def start(
     host: str = Option("127.0.0.1"),
     port: int = Option(8080),
+    inbrowser: bool = Option(False, help=INBROWSER_HELP),
     model: str = Option(
         DEFAULT_MODEL,
         help=f"Erase models: [{', '.join(AVAILABLE_MODELS)}].\n"
@@ -127,6 +130,7 @@ def start(
     ),
     interactive_seg_device: Device = Option(Device.cpu),
     enable_remove_bg: bool = Option(False, help=REMOVE_BG_HELP),
+    remove_bg_model: RemoveBGModel = Option(RemoveBGModel.briaai_rmbg_1_4),
     enable_anime_seg: bool = Option(False, help=ANIMESEG_HELP),
     enable_realesrgan: bool = Option(False),
     realesrgan_device: Device = Option(Device.cpu),
@@ -164,10 +168,18 @@ def start(
     from iopaint.api import Api
     from iopaint.schema import ApiConfig
 
-    app = FastAPI()
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        if inbrowser:
+            webbrowser.open(f"http://localhost:{port}", new=0, autoraise=True)
+        yield
+
+    app = FastAPI(lifespan=lifespan)
+
     api_config = ApiConfig(
         host=host,
         port=port,
+        inbrowser=inbrowser,
         model=model,
         no_half=no_half,
         low_mem=low_mem,
@@ -183,6 +195,7 @@ def start(
         interactive_seg_model=interactive_seg_model,
         interactive_seg_device=interactive_seg_device,
         enable_remove_bg=enable_remove_bg,
+        remove_bg_model=remove_bg_model,
         enable_anime_seg=enable_anime_seg,
         enable_realesrgan=enable_realesrgan,
         realesrgan_device=realesrgan_device,
