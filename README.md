@@ -96,3 +96,26 @@ iopaint run --model=lama --device=cpu \
 When `--mask` is a path to a mask file, all images will be processed using this mask.
 
 You can see more information about the available models and plugins supported by IOPaint below.
+
+## Development
+
+Install [nodejs](https://nodejs.org/en), then install the front-end dependencies.
+
+```bash
+git clone https://github.com/Sanster/IOPaint.git
+cd IOPaint/web_app
+npm install
+```
+
+Start front-end development environment
+```bash
+npm run dev
+```
+
+Install back-end requirements and start back-end service
+```bash
+pip install -r requirements.txt
+python3 main.py --model lama
+```
+
+Then you can visit `http://localhost:5173/` for development. The front-end code will automatically update after being modified, but the back-end needs to restart the service after modifying the python code.
